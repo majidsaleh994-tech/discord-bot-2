@@ -803,4 +803,4 @@ if __name__ == "__main__":
     t.daemon = True
     t.start()
     
-    bot.run('MTU1Mjc4MDc4MTUxMDcyMTUzNg.GLn0y8.L5_HuC8fein6kXJ21-WtzUjGvLqGSCErOxE5H8')
+    bot.run('MTU1MzAxMTY1MTkyODkyMDEzNA.GnUdJi.-RASEPub8JvFLyIWTK2MDiybsFb_Bv6zF4NsYg')
