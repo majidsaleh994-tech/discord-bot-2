@@ -630,9 +630,15 @@ if __name__ == "__main__":
     
     app = Flask('')
     @app.route('/')
-    def home(): return "I'm alive!", 200
+    def home():
+        return "I'm alive!", 200
         
-    Thread(target=lambda: app.run(host='0.0.0.0', port=8080), daemon=True).start()
+    def run_flask():
+        app.run(host='0.0.0.0', port=8080)
+        
+    t = Thread(target=run_flask)
+    t.daemon = True
+    t.start()
 
 # تشغيل البوت مباشرة بالتوكن الخاص بك
-bot.run("MTU1MzAxMTY1MTkyODkyMDEzNA.GOFh02.2BQ6c9uGsRQ4fMGagZeiNiyFCXw-Cq-O_3Og_k")
+bot.run("MTU1Mjc4MDc4MTUxMDcyMTUzNg.GLn0y8.L5_HuC8fein6kXJ21-WtzUjGvLqGSCErOxE5H8")
