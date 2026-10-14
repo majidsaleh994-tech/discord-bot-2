@@ -17,15 +17,8 @@ intents.members = True
 
 bot = commands.Bot(command_prefix='!', intents=intents)
 
-# ==================== الآيديهات المحدثة بالكامل ====================
 BAN_LOG_CHANNEL_ID = 1559739128290087003
 TIMEOUT_LOG_CHANNEL_ID = 1559739064159047800
-TARGET_SETUP_CHANNEL_ID = 1518640940590563348
-TICKET_CATEGORY_ID = 1518640900157341758
-
-ALLOWED_DUTY_ROLE_IDS = [
-    1559738963042770984,  # الرتبة المحددة للدوام والإدارة
-]
 
 song_queues = {}
 
@@ -56,12 +49,12 @@ async def on_ready():
     print(f'✅ تم الاتصال بنجاح! البوت جاهز باسم: {bot.user.name}')
     await bot.change_presence(activity=discord.Game(name="Bo9al7's Bot Al-Marri"))
 
-# ==================== نظام التكتات ====================
 @bot.command(name="setup")
 @commands.has_permissions(administrator=True)
 async def setup_ticket_panel(ctx):
-    if ctx.channel.id != TARGET_SETUP_CHANNEL_ID:
-        return await ctx.send(f"❌ يرجى استخدام هذا الأمر داخل الروم المخصص للتكتات فقط!", delete_after=5)
+    target_channel_id = 1518640940590563348
+    if ctx.channel.id != target_channel_id:
+        return await ctx.send(f"❌ يرجى استخدام هذا الأمر داخل الروم المخصص فقط!", delete_after=5)
 
     await ctx.message.delete()
     
@@ -101,7 +94,9 @@ class TicketSetupView(discord.ui.View):
             if role.permissions.administrator:
                 overwrites[role] = discord.PermissionOverwrite(view_channel=True, send_messages=True, read_messages=True, attach_files=True)
 
-        category = guild.get_channel(TICKET_CATEGORY_ID)
+        category_id = 1518640900157341758
+        category = guild.get_channel(category_id)
+
         channel_name = f"تذكرة-شراء-{ticket_number_str}"
         
         try:
@@ -150,29 +145,37 @@ class TicketControlView(discord.ui.View):
     @discord.ui.button(label="استلام", style=discord.ButtonStyle.success, custom_id="claim_ticket_fixed")
     async def claim_ticket(self, interaction: discord.Interaction, button: discord.ui.Button):
         if not interaction.user.guild_permissions.administrator:
-            return await interaction.response.send_message("❌ فقط الإداريين يمكنهم التحكم باستلام التذكرة.", ephemeral=True)
+            return await interaction.response.send_message("❌ فقط الإداريين (Administrator) يمكنهم التحكم باستلام التذكرة.", ephemeral=True)
 
         await interaction.response.defer()
+
         self.is_claimed = not self.is_claimed
         self.update_buttons()
 
         try:
             if self.is_claimed:
                 await interaction.channel.edit(name=f"تم-الاستلام-{self.ticket_num}")
-                claim_embed = discord.Embed(description=f"تم استلام التذكرة من قبل {interaction.user.mention}", color=0x2ECC71)
+                claim_embed = discord.Embed(
+                    description=f"تم استلام التذكرة من قبل {interaction.user.mention}",
+                    color=0x2ECC71
+                )
                 await interaction.channel.send(embed=claim_embed)
             else:
                 await interaction.channel.edit(name=self.original_name)
-                unclaim_embed = discord.Embed(description=f"تم إلغاء استلام التذكرة من قبل {interaction.user.mention}", color=0xE74C3C)
+                unclaim_embed = discord.Embed(
+                    description=f"تم إلغاء استلام التذكرة من قبل {interaction.user.mention}",
+                    color=0xE74C3C
+                )
                 await interaction.channel.send(embed=unclaim_embed)
+            
             await interaction.message.edit(view=self)
         except Exception as e:
-            print(f"خطأ في تعديل اسم الروم: {e}")
+            print(f"خطأ في تعديل اسم أو حالة الروم: {e}")
 
     @discord.ui.button(label="اغلاق", style=discord.ButtonStyle.danger, custom_id="close_ticket_request_fixed")
     async def close_ticket_request(self, interaction: discord.Interaction, button: discord.ui.Button):
         if not interaction.user.guild_permissions.administrator:
-            return await interaction.response.send_message("❌ فقط الإداريين يمكنهم إغلاق التذكرة.", ephemeral=True)
+            return await interaction.response.send_message("❌ فقط الإداريين (Administrator) يمكنهم إغلاق التذكرة.", ephemeral=True)
 
         view = ConfirmCloseView(self.ticket_num, self.original_name)
         await interaction.response.send_message("هل أنت متأكد من إغلاق التذكرة؟", view=view, ephemeral=True)
@@ -188,19 +191,26 @@ class ConfirmCloseView(discord.ui.View):
         await interaction.response.defer()
         try:
             await interaction.message.delete()
-        except:
+        except Exception:
             pass
 
         channel = interaction.channel
         try:
             await channel.edit(name=f"مغلق-{self.ticket_num}")
-        except:
-            pass
+        except Exception as e:
+            print(f"خطأ في تعديل اسم الروم عند الإغلاق: {e}")
         
-        closed_embed = discord.Embed(description=f"Ticket Closed by {interaction.user.mention}", color=0xF1C40F)
+        closed_embed = discord.Embed(
+            description=f"Ticket Closed by {interaction.user.mention}",
+            color=0xF1C40F
+        )
         await channel.send(embed=closed_embed)
 
-        controls_embed = discord.Embed(description="```Support team ticket controls```", color=0x2F3136)
+        controls_embed = discord.Embed(
+            description="```Support team ticket controls```",
+            color=0x2F3136
+        )
+        
         view = ClosedTicketAdminView(self.original_name)
         await channel.send(embed=controls_embed, view=view)
 
@@ -209,7 +219,7 @@ class ConfirmCloseView(discord.ui.View):
         await interaction.response.defer()
         try:
             await interaction.message.delete()
-        except:
+        except Exception:
             pass
 
 class ClosedTicketAdminView(discord.ui.View):
@@ -226,28 +236,29 @@ class ClosedTicketAdminView(discord.ui.View):
     @discord.ui.button(label="Open", style=discord.ButtonStyle.secondary, emoji="🔓", custom_id="reopen_ticket_fixed")
     async def reopen(self, interaction: discord.Interaction, button: discord.ui.Button):
         if not interaction.user.guild_permissions.administrator:
-            return await interaction.response.send_message("❌ فقط الإداريين يمكنهم إعادة فتح التذكرة.", ephemeral=True)
+            return await interaction.response.send_message("❌ فقط الإداريين (Administrator) يمكنهم إعادة فتح التذكرة.", ephemeral=True)
             
         await interaction.response.defer()
         try:
             await interaction.channel.edit(name=self.original_name)
-            await interaction.followup.send("تم إعادة فتح التذكرة.", ephemeral=True)
+            await interaction.followup.send("تم إعادة فتح التذكرة وإرجاع اسمها السابق.", ephemeral=True)
         except Exception as e:
             await interaction.followup.send(f"❌ حدث خطأ: {e}", ephemeral=True)
 
     @discord.ui.button(label="Delete", style=discord.ButtonStyle.secondary, emoji="⛔", custom_id="delete_ticket_fixed")
     async def delete(self, interaction: discord.Interaction, button: discord.ui.Button):
         if not interaction.user.guild_permissions.administrator:
-            return await interaction.response.send_message("❌ فقط الإداريين يمكنهم حذف التذكرة.", ephemeral=True)
+            return await interaction.response.send_message("❌ فقط الإداريين (Administrator) يمكنهم حذف التذكرة.", ephemeral=True)
             
         await interaction.response.send_message("سيتم حذف التذكرة خلال ثوانٍ...")
+        import asyncio
         await asyncio.sleep(2)
         try:
             await interaction.channel.delete()
-        except:
-            pass
+        except Exception as e:
+            print(f"خطأ عند حذف القناة: {e}")
 
-# ==================== حساب ساعات العمل والدخول والخروج ====================
+# ==================== حساب ساعات العمل (دخول / خروج / سجل) ====================
 LOGS_FILE = "duty_logs.json"
 
 def load_logs():
@@ -255,7 +266,7 @@ def load_logs():
         try:
             with open(LOGS_FILE, "r", encoding="utf-8") as f:
                 return json.load(f)
-        except:
+        except Exception:
             return {}
     return {}
 
@@ -263,28 +274,25 @@ def save_logs(data):
     try:
         with open(LOGS_FILE, "w", encoding="utf-8") as f:
             json.dump(data, f, ensure_ascii=False, indent=4)
-    except:
-        pass
+    except Exception as e:
+        print(f"خطأ في حفظ ملف السجلات: {e}")
 
 active_sessions = {}
 duty_data = load_logs()
 
-def has_duty_permission(interaction: discord.Interaction) -> bool:
-    if interaction.user.guild_permissions.administrator:
-        return True
-    return any(role.id in ALLOWED_DUTY_ROLE_IDS for role in interaction.user.roles)
-
 @bot.tree.command(name="دخول", description="تسجيل وقت الدخول وتتبع ساعات العمل")
 async def entry(interaction: discord.Interaction):
     user_id_str = str(interaction.user.id)
-    active_sessions[user_id_str] = time.time()
+    current_time = time.time()
+    active_sessions[user_id_str] = current_time
     await interaction.response.send_message(f"✅ تم تسجيل الدخول بنجاح، حياك الله {interaction.user.mention}!", ephemeral=False)
 
 @bot.tree.command(name="خروج", description="تسجيل الخروج وحساب إجمالي وقت التواجد")
 async def exit(interaction: discord.Interaction):
     user_id_str = str(interaction.user.id)
+
     if user_id_str not in active_sessions:
-        return await interaction.response.send_message(f"⚠️ {interaction.user.mention}, أنت لم تقم بتسجيل الدخول أساساً!", ephemeral=True)
+        return await interaction.response.send_message(f"⚠️ {interaction.user.mention}, أنت لم تقم بتسجيل الدخول أساساً أو أنك سجلت خروجك مسبقاً!", ephemeral=True)
 
     start_time = active_sessions.pop(user_id_str)
     end_time = time.time()
@@ -293,36 +301,52 @@ async def exit(interaction: discord.Interaction):
     if user_id_str not in duty_data:
         duty_data[user_id_str] = []
     
-    duty_data[user_id_str].append({"start": start_time, "end": end_time, "duration": elapsed_seconds})
+    duty_data[user_id_str].append({
+        "start": start_time,
+        "end": end_time,
+        "duration": elapsed_seconds
+    })
     save_logs(duty_data)
 
     hours = elapsed_seconds // 3600
     minutes = (elapsed_seconds % 3600) // 60
     seconds = elapsed_seconds % 60
-    await interaction.response.send_message(f"🚪 تم تسجيل الخروج بنجاح {interaction.user.mention}!\n⏱️ إجمالي مدة التواجد: `{hours} ساعة` و `{minutes} دقيقة` و `{seconds} ثانية`", ephemeral=False)
 
-@bot.tree.command(name="سجل_الدوام", description="عرض سجل ساعات العمل بين تاريخين محددين (محمي بالرتب)")
-@app_commands.describe(من_تاريخ="YYYY-MM-DD", الى_تاريخ="YYYY-MM-DD")
+    time_str = f"⏱️ إجمالي مدة التواجد: `{hours} ساعة` و `{minutes} دقيقة` و `{seconds} ثانية`"
+    await interaction.response.send_message(f"🚪 تم تسجيل الخروج بنجاح {interaction.user.mention}!\n{time_str}", ephemeral=False)
+
+@bot.tree.command(name="سجل_الدوام", description="عرض سجل ساعات العمل بين تاريخين محددين")
+@app_commands.describe(
+    من_تاريخ="التاريخ البدء بصيغة YYYY-MM-DD",
+    الى_تاريخ="التاريخ الانتهاء بصيغة YYYY-MM-DD"
+)
 async def duty_records(interaction: discord.Interaction, من_تاريخ: str, الى_تاريخ: str):
-    if not has_duty_permission(interaction):
-        return await interaction.response.send_message("❌ عذراً، هذا الأمر مخصص فقط للأدمن أو الرتب المخولة.", ephemeral=True)
+    if not interaction.user.guild_permissions.administrator:
+        return await interaction.response.send_message("❌ عذراً، هذا الأمر مخصص للإداريين فقط.", ephemeral=True)
 
     try:
         start_date = datetime.strptime(من_تاريخ, "%Y-%m-%d")
         end_date = datetime.strptime(الى_تاريخ, "%Y-%m-%d").replace(hour=23, minute=59, second=59)
     except ValueError:
-        return await interaction.response.send_message("❌ صيغة التاريخ غير صحيحة! استخدم `YYYY-MM-DD`.", ephemeral=True)
+        return await interaction.response.send_message("❌ صيغة التاريخ غير صحيحة! استخدم صيغة `YYYY-MM-DD`.", ephemeral=True)
 
     report_text = f"📊 **سجل ساعات الدوام من {من_تاريخ} إلى {الى_تاريخ}**:\n\n"
     found_any = False
 
     for user_id_str, sessions in duty_data.items():
-        total_user_seconds = sum(s["duration"] for s in sessions if start_date.timestamp() <= s["start"] <= end_date.timestamp())
+        total_user_seconds = 0
+        for session in sessions:
+            if start_date.timestamp() <= session["start"] <= end_date.timestamp():
+                total_user_seconds += session["duration"]
+
         if total_user_seconds > 0:
             found_any = True
             member = interaction.guild.get_member(int(user_id_str))
             username = member.mention if member else f"مستخدم (ID: {user_id_str})"
-            h, m, s = total_user_seconds // 3600, (total_user_seconds % 3600) // 60, total_user_seconds % 60
+            
+            h = total_user_seconds // 3600
+            m = (total_user_seconds % 3600) // 60
+            s = total_user_seconds % 60
             report_text += f"👤 {username} ➔ **{h} ساعة** و **{m} دقيقة** و **{s} ثانية**\n"
 
     if not found_any:
@@ -330,12 +354,27 @@ async def duty_records(interaction: discord.Interaction, من_تاريخ: str, �
 
     await interaction.response.send_message(report_text, ephemeral=False)
 
-@bot.tree.command(name="تعديل_الدوام", description="زيادة أو إنقاص ساعات الدوام (محمي بالرتب)")
-@app_commands.describe(العضو="اختر العضو", العملية="زيادة أو نقص", الساعات="عدد الساعات")
-@app_commands.choices(العملية=[app_commands.Choice(name="زيادة (+)", value="add"), app_commands.Choice(name="نقصان (-)", value="sub")])
+# ==================== أمر تعديل ساعات الدوام (زيادة / نقص) ====================
+DUTY_ADMIN_ROLE_ID = 1559695654475792394
+
+@bot.tree.command(name="تعديل_الدوام", description="زيادة أو إنقاص ساعات الدوام لمشرف معين")
+@app_commands.describe(
+    العضو="اختر العضو المراد تعديل ساعاته",
+    العملية="اختر هل تريد زيادة أو نقص",
+    الساعات="عدد الساعات (يمكنك وضع أرقام عشرية مثل 0.5 أو أرقام صحيحة)"
+)
+@app_commands.choices(العملية=[
+    app_commands.Choice(name="زيادة (+)", value="add"),
+    app_commands.Choice(name="نقصان (-)", value="sub")
+])
 async def edit_duty(interaction: discord.Interaction, العضو: discord.Member, العملية: str, الساعات: float):
-    if not has_duty_permission(interaction):
-        return await interaction.response.send_message("❌ عذراً، هذا الأمر مخصص فقط للأدمن أو الرتب المخولة.", ephemeral=True)
+    # التحقق مما إذا كان المستخدم يمتلك الصلاحية أو الرتبة المحددة أو أدمن
+    has_permission = interaction.user.guild_permissions.administrator
+    if not has_permission and any(role.id == DUTY_ADMIN_ROLE_ID for role in interaction.user.roles):
+        has_permission = True
+
+    if not has_permission:
+        return await interaction.response.send_message("❌ عذراً، هذا الأمر مخصص فقط لرتبة الإدارة المحددة أو الأدمن.", ephemeral=True)
 
     user_id_str = str(العضو.id)
     seconds_to_adjust = int(الساعات * 3600)
@@ -343,41 +382,68 @@ async def edit_duty(interaction: discord.Interaction, العضو: discord.Member
     if user_id_str not in duty_data:
         duty_data[user_id_str] = []
 
+    # إذا كانت العملية زيادة، نضيف جلسة وهمية بالساعات المطلوبة
     if العملية == "add":
-        duty_data[user_id_str].append({"start": time.time() - seconds_to_adjust, "end": time.time(), "duration": seconds_to_adjust})
+        duty_data[user_id_str].append({
+            "start": time.time() - seconds_to_adjust,
+            "end": time.time(),
+            "duration": seconds_to_adjust
+        })
         action_text = f"زيادة **{الساعات} ساعة**"
     else:
-        duty_data[user_id_str].append({"start": time.time(), "end": time.time() + seconds_to_adjust, "duration": -seconds_to_adjust})
+        # إذا كانت العملية نقصاناً، نضيف جلسة بالسالب لخصمها من الإجمالي
+        duty_data[user_id_str].append({
+            "start": time.time(),
+            "end": time.time() + seconds_to_adjust,
+            "duration": -seconds_to_adjust
+        })
         action_text = f"خصم **{الساعات} ساعة**"
 
     save_logs(duty_data)
-    await interaction.response.send_message(f"✅ تم بنجاح {action_text} لـ {العضو.mention}!", ephemeral=False)
 
+    await interaction.response.send_message(f"✅ تم بنجاح {action_text} لـ {العضو.mention}!", ephemeral=False)
+    
 # ==================== فحص الروم الصوتي CheckVC ====================
-@bot.command(name='checkvc')
+@bot.command(name='checkvc', help='فحص الروم الصوتي وعرض الأعضاء')
 async def checkvc(ctx, *, channel_input: str = None):
     channel_id = None
     if channel_input:
+        clean_input = channel_input.replace('<#', '').replace('>', '').strip()
         try:
-            channel_id = int(channel_input.replace('<#', '').replace('>', '').strip())
-        except:
+            channel_id = int(clean_input)
+        except ValueError:
             pass
 
-    voice_channel = ctx.guild.get_channel(channel_id) if channel_id else (ctx.author.voice.channel if ctx.author.voice else None)
+    voice_channel = None
+    if channel_id:
+        voice_channel = ctx.guild.get_channel(channel_id)
+    
+    if not voice_channel and ctx.author.voice:
+        voice_channel = ctx.author.voice.channel
+
     if not voice_channel or not isinstance(voice_channel, discord.VoiceChannel):
-        return await ctx.send("❌ يرجى تحديد روم صوتي صحيح!")
+        await ctx.send("❌ يرجى تحديد روم صوتي صحيح!")
+        return
 
     members = voice_channel.members
     if not members:
-        return await ctx.send(f"📭 الروم الصوتي `{voice_channel.name}` فارغ حالياً.")
+        await ctx.send(f"📭 الروم الصوتي `{voice_channel.name}` فارغ حالياً.")
+        return
 
-    info_embed = discord.Embed(title="Check Voice Channel", description=f"**Voice Channel :** 🔊 {voice_channel.mention}\n**All in Voice :** `{len(members)}`", color=discord.Color.from_rgb(47, 49, 54))
+    sorted_members = sorted(members, key=lambda m: m.joined_at if m.joined_at else datetime.max)
+    info_embed = discord.Embed(
+        title="Check Voice Channel",
+        description=f"**Voice Channel :** 🔊 {voice_channel.mention}\n**All in Voice :** `{len(members)}`",
+        color=discord.Color.from_rgb(47, 49, 54)
+    )
     await ctx.send(embed=info_embed)
 
-    text_content = "**List Members**\n" + "\n".join([f"`{idx}` | {member.mention}" for idx, member in enumerate(sorted(members, key=lambda m: m.joined_at or datetime.max), 1)])
+    text_content = "**List Members**\n"
+    for idx, member in enumerate(sorted_members, start=1):
+        text_content += f"`{idx}` | {member.mention}\n"
     await ctx.send(text_content)
 
-# ==================== معالجة الـ Ban والـ Timeout ====================
+# ==================== معالجة رسائل التايم أوت والباند ====================
 @bot.event
 async def on_message(message):
     if message.author.bot:
@@ -385,33 +451,48 @@ async def on_message(message):
 
     content = message.content.strip()
 
-    # التايم أوت
     if content.startswith('!تايم اوت') or content.startswith('!فك تايم اوت'):
         if not message.author.guild_permissions.moderate_members:
-            return await message.reply('❌ ليس لديك صلاحية لاستخدام هذا الأمر.')
+            await message.reply('❌ ليس لديك صلاحية لاستخدام هذا الأمر.')
+            return
 
         log_channel = message.guild.get_channel(TIMEOUT_LOG_CHANNEL_ID)
 
         if content.startswith('!تايم اوت'):
             args = content[9:].strip().split()
             if not args:
-                return await message.reply('⚠️ يرجى تحديد العضو.')
-            try:
-                target_member = message.guild.get_member(message.mentions[0].id) if message.mentions else (await message.guild.fetch_member(int(args[0])))
-                start_idx = 1 if message.mentions else 1
-            except:
-                return await message.reply('❌ لم يتم العثور على العضو.')
+                await message.reply('⚠️ يرجى تحديد العضو.')
+                return
 
-            reason = " ".join(args[start_idx:]) if len(args) > start_idx else 'بدون سبب'
+            target_member = None
+            if message.mentions:
+                target_member = message.guild.get_member(message.mentions[0].id)
+                args_start_idx = 1
+            else:
+                try:
+                    user_id = int(args[0])
+                    target_member = message.guild.get_member(user_id) or await message.guild.fetch_member(user_id)
+                    args_start_idx = 1
+                except:
+                    await message.reply('❌ لم يتم العثور على العضو.')
+                    return
+
+            duration_delta = discord.utils.utcnow() + timedelta(days=28)
+            reason = " ".join(args[args_start_idx:]) if len(args) > args_start_idx else 'بدون سبب'
+
             try:
-                await target_member.timeout(discord.utils.utcnow() + timedelta(days=28), reason=reason)
+                await target_member.timeout(duration_delta, reason=reason)
                 embed = discord.Embed(title='⏳ تم تطبيق تايم أوت مفتوح على عضو', color=0xFFA500, timestamp=discord.utils.utcnow())
                 embed.add_field(name='👤 العضو', value=f"<@{target_member.id}>", inline=True)
                 embed.add_field(name='🛡️ بواسطة', value=f"<@{message.author.id}>", inline=True)
-                embed.add_field(name='📝 السبب', value=reason, inline=False)
                 
-                if log_channel: await log_channel.send(embed=embed)
-                await message.reply("تمممممممممممممم")
+                if log_channel:
+                    await log_channel.send(embed=embed)
+                else:
+                    await message.channel.send(embed=embed)
+                
+                responses = ["تمممممممممممممم", "ابشرررررررررررررررر", "بس نايم اوت ؟ خل موضوعه عندي", "هو زعلك ؟ والله مايمشي"]
+                await message.reply(random.choice(responses))
             except Exception as e:
                 await message.reply(f'❌ حدث خطأ: {e}')
             return
@@ -419,57 +500,88 @@ async def on_message(message):
         if content.startswith('!فك تايم اوت'):
             args = content[12:].strip().split()
             if not args:
-                return await message.reply('⚠️ يرجى تحديد العضو.')
-            try:
-                target_member = message.guild.get_member(message.mentions[0].id) if message.mentions else (await message.guild.fetch_member(int(args[0])))
-            except:
-                return await message.reply('❌ لم يتم العثور على العضو.')
+                await message.reply('⚠️ يرجى تحديد العضو.')
+                return
+
+            target_member = None
+            if message.mentions:
+                target_member = message.guild.get_member(message.mentions[0].id)
+            else:
+                try:
+                    user_id = int(args[0])
+                    target_member = message.guild.get_member(user_id) or await message.guild.fetch_member(user_id)
+                except:
+                    await message.reply('❌ لم يتم العثور على العضو.')
+                    return
 
             try:
                 await target_member.timeout(None, reason="فك التايم أوت")
                 embed = discord.Embed(title='🔓 تم فك التايم أوت عن عضو', color=0x00FF00, timestamp=discord.utils.utcnow())
-                if log_channel: await log_channel.send(embed=embed)
+                if log_channel:
+                    await log_channel.send(embed=embed)
                 await message.reply("تمممممم")
             except Exception as e:
                 await message.reply(f'❌ حدث خطأ: {e}')
             return
 
-    # الباند
-    if content.startswith('!باند') or content.startswith('!ban'):
+    if content.startswith('!باند') or content.startswith('!ban') or content.startswith('!فك باند') or content.startswith('!unban'):
         if not message.author.guild_permissions.ban_members and not message.author.guild_permissions.moderate_members:
-            return await message.reply('❌ ليس لديك صلاحية.')
+            await message.reply('❌ ليس لديك صلاحية لاستخدام هذا الأمر.')
+            return
 
         ban_log_channel = message.guild.get_channel(BAN_LOG_CHANNEL_ID)
-        args = content[5 if content.startswith('!باند') else 4:].strip().split()
-        if not args:
-            return await message.reply('⚠️ يرجى تحديد العضو.')
 
-        try:
+        if content.startswith('!باند') or content.startswith('!ban'):
+            prefix_len = 5 if content.startswith('!باند') else 4
+            args = content[prefix_len:].strip().split()
+            if not args:
+                await message.reply('⚠️ يرجى تحديد العضو.')
+                return
+
             target_user_id = message.mentions[0].id if message.mentions else int(args[0])
             reason = " ".join(args[1:]) if len(args) > 1 else 'بدون سبب'
-            user_obj = await bot.fetch_user(target_user_id)
-            await message.guild.ban(user_obj, reason=reason)
 
-            embed = discord.Embed(title='🔨 تم حظر عضو نهائياً (باند)', color=0xFF0000, timestamp=discord.utils.utcnow())
-            embed.add_field(name='👤 العضو', value=f"<@{target_user_id}>", inline=True)
-            embed.add_field(name='🛡️ بواسطة', value=f"<@{message.author.id}>", inline=True)
-            embed.add_field(name='📝 السبب', value=reason, inline=False)
-            
-            if ban_log_channel: await ban_log_channel.send(embed=embed)
-            await message.reply("انقرض ياوحش")
-        except Exception as e:
-            await message.reply(f'❌ حدث خطأ: {e}')
-        return
+            try:
+                user_obj = await bot.fetch_user(target_user_id)
+                await message.guild.ban(user_obj, reason=reason)
+                embed = discord.Embed(title='🔨 تم حظر عضو نهائياً (باند)', color=0xFF0000, timestamp=discord.utils.utcnow())
+                embed.add_field(name='👤 العضو', value=f"<@{target_user_id}>", inline=True)
+                if ban_log_channel:
+                    await ban_log_channel.send(embed=embed)
+                await message.reply("انقرض ياوحش")
+            except Exception as e:
+                await message.reply(f'❌ حدث خطأ: {e}')
+            return
 
     if content and not content.startswith('!'):
-        if content.split()[0] in ['حذف', 'مسح', 'purge', 'clear', 'شغل', 'p', 'سكب', 's', 'وقف', 'كمل', 'إنهاء', 'stop', 'انتظار', 'q', 'اطلع', 'سؤال', 'روليت', 'بنك']:
+        first_word = content.split()[0]
+        if first_word in ['حذف', 'مسح', 'purge', 'clear', 'شغل', 'p', 'سكب', 's', 'وقف', 'كمل', 'إنهاء', 'stop', 'انتظار', 'q', 'اطلع', 'سؤال', 'روليت', 'بنك', 'سين_جيم']:
             message.content = '!' + content
 
     await bot.process_commands(message)
 
 # ==================== أوامر الموسيقى ====================
-YTDL_OPTIONS = {'format': 'bestaudio/best', 'extractaudio': True, 'audioformat': 'mp3', 'outtmpl': '%(extractor)s-%(id)s-%(title)s.%(ext)s', 'restrictfilenames': True, 'noplaylist': True, 'nocheckcertificate': True, 'ignoreerrors': False, 'logtostderr': False, 'quiet': True, 'no_warnings': True, 'default_search': 'scsearch', 'source_address': '0.0.0.0'}
-FFMPEG_OPTIONS = {'before_options': '-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5', 'options': '-vn -loglevel error'}
+YTDL_OPTIONS = {
+    'format': 'bestaudio/best',
+    'extractaudio': True,
+    'audioformat': 'mp3',
+    'outtmpl': '%(extractor)s-%(id)s-%(title)s.%(ext)s',
+    'restrictfilenames': True,
+    'noplaylist': True,
+    'nocheckcertificate': True,
+    'ignoreerrors': False,
+    'logtostderr': False,
+    'quiet': True,
+    'no_warnings': True,
+    'default_search': 'scsearch',
+    'source_address': '0.0.0.0',
+}
+
+FFMPEG_OPTIONS = {
+    'before_options': '-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5',
+    'options': '-vn -loglevel error'
+}
+
 ytdl = yt_dlp.YoutubeDL(YTDL_OPTIONS)
 
 class YTDLSource(discord.PCMVolumeTransformer):
@@ -484,12 +596,16 @@ class YTDLSource(discord.PCMVolumeTransformer):
         loop = loop or asyncio.get_event_loop()
         query = f"scsearch:{url}" if not (url.startswith('http://') or url.startswith('https://')) else url
         data = await loop.run_in_executor(None, lambda: ytdl.extract_info(query, download=not stream))
-        if 'entries' in data: data = data['entries'][0]
-        return cls(discord.FFmpegPCMAudio(data['url'] if stream else ytdl.prepare_filename(data), **FFMPEG_OPTIONS), data=data)
+        if 'entries' in data:
+            data = data['entries'][0]
+        filename = data['url'] if stream else ytdl.prepare_filename(data)
+        return cls(discord.FFmpegPCMAudio(filename, **FFMPEG_OPTIONS), data=data)
 
 def play_next(ctx):
     queue = get_queue(ctx.guild.id)
-    if queue: asyncio.run_coroutine_threadsafe(play_song(ctx, queue.pop(0)), bot.loop)
+    if len(queue) > 0:
+        next_song = queue.pop(0)
+        asyncio.run_coroutine_threadsafe(play_song(ctx, next_song), bot.loop)
 
 async def play_song(ctx, url):
     async with ctx.typing():
@@ -504,10 +620,11 @@ async def play_song(ctx, url):
 @bot.event
 async def on_member_join(member):
     channel = discord.utils.get(member.guild.text_channels, name='welcome')
-    if channel:
-        embed = discord.Embed(description=f"| - Welcome To 82 Group\n| - Member Name : {member.mention}", color=discord.Color.dark_embed())
-        embed.set_thumbnail(url=member.display_avatar.url)
-        await channel.send(embed=embed)
+    if not channel:
+        return
+    embed = discord.Embed(description=f"| - Welcome To 82 Group\n| - Member Name : {member.mention}", color=discord.Color.dark_embed())
+    embed.set_thumbnail(url=member.display_avatar.url)
+    await channel.send(embed=embed)
 
 @bot.command(name='حذف', aliases=['مسح', 'purge', 'clear'])
 @commands.has_permissions(manage_messages=True)
@@ -515,52 +632,63 @@ async def clear_messages(ctx, amount: int = 10):
     deleted = await ctx.channel.purge(limit=amount + 1)
     msg = await ctx.send(f"🧹 تم حذف **{len(deleted) - 1}** رسالة بنجاح!")
     await asyncio.sleep(3)
-    try: await msg.delete()
-    except: pass
+    try:
+        await msg.delete()
+    except:
+        pass
 
 @bot.command(name='شغل', aliases=['p'])
 async def play(ctx, *, url):
-    if not ctx.author.voice: return await ctx.send("يرجى الانضمام إلى روم صوتي أولاً!")
+    if not ctx.author.voice:
+        return await ctx.send("يرجى الانضمام إلى روم صوتي أولاً!")
     channel = ctx.author.voice.channel
-    if ctx.voice_client is None: await channel.connect()
-    elif ctx.voice_client.channel != channel: await ctx.voice_client.move_to(channel)
+    if ctx.voice_client is None:
+        await channel.connect()
+    elif ctx.voice_client.channel != channel:
+        await ctx.voice_client.move_to(channel)
     
     queue = get_queue(ctx.guild.id)
     if ctx.voice_client.is_playing() or ctx.voice_client.is_paused():
         queue.append(url)
-        await ctx.send(f"📥 تم إضافة طلبك لقائمة الانتظار (**{len(queue)}**)")
-    else: await play_song(ctx, url)
+        await ctx.send(f"📥 تم إضافة طلبك إلى قائمة الانتظار (**{len(queue)}**)")
+    else:
+        await play_song(ctx, url)
 
 @bot.command(name='سكب', aliases=['s'])
 async def skip(ctx):
     if ctx.voice_client and ctx.voice_client.is_playing():
         ctx.voice_client.stop()
-        await ctx.send("⏭️ تم تخطي الأغنية.")
+        await ctx.send("⏭️ تم تخطي الأغنية الحالية.")
 
 @bot.command(name='وقف')
 async def pause(ctx):
     if ctx.voice_client and ctx.voice_client.is_playing():
         ctx.voice_client.pause()
-        await ctx.send("⏸️ تم الإيقاف مؤقتاً.")
+        await ctx.send("⏸️ تم إيقاف التشغيل مؤقتاً.")
 
 @bot.command(name='كمل')
 async def resume(ctx):
     if ctx.voice_client and ctx.voice_client.is_paused():
         ctx.voice_client.resume()
-        await ctx.send("▶️ تم الاستكمال.")
+        await ctx.send("▶️ تم استكمال التشغيل.")
 
 @bot.command(name='إنهاء', aliases=['stop'])
 async def stop(ctx):
-    song_queues.get(ctx.guild.id, []).clear()
+    guild_id = ctx.guild.id
+    if guild_id in song_queues:
+        song_queues[guild_id].clear()
     if ctx.voice_client:
         ctx.voice_client.stop()
-        await ctx.send("⏹️ تم الإيقاف وتفريغ القائمة.")
+        await ctx.send("⏹️ تم إيقاف التشغيل وتفريغ القائمة.")
 
 @bot.command(name='انتظار', aliases=['q'])
 async def show_queue(ctx):
     queue = get_queue(ctx.guild.id)
-    if not queue: return await ctx.send("📜 قائمة الانتظار فارغة.")
-    await ctx.send(embed=discord.Embed(title="📜 قائمة الأغاني المنتظرة", description="\n".join([f"**{i+1}.** {url}" for i, url in enumerate(queue)]), color=discord.Color.blue()))
+    if not queue:
+        return await ctx.send("📜 قائمة الانتظار فارغة.")
+    description = "\n".join([f"**{i+1}.** {url}" for i, url in enumerate(queue)])
+    embed = discord.Embed(title="📜 قائمة الأغاني المنتظرة", description=description, color=discord.Color.blue())
+    await ctx.send(embed=embed)
 
 @bot.command(name='اطلع')
 async def leave(ctx):
@@ -573,23 +701,28 @@ BANK_FILE = "bank_data.json"
 
 def load_bank():
     if os.path.exists(BANK_FILE):
-        try: return json.load(open(BANK_FILE, "r"))
-        except: return {}
+        with open(BANK_FILE, "r") as f:
+            try: return json.load(f)
+            except: return {}
     return {}
+
+def save_bank(data):
+    with open(BANK_FILE, "w") as f: json.dump(data, f, indent=4)
 
 def add_money(user_id, amount=0.50):
     data = load_bank()
     uid = str(user_id)
     data[uid] = round(data.get(uid, 0.0) + amount, 2)
-    json.dump(data, open(BANK_FILE, "w"), indent=4)
+    save_bank(data)
     return data[uid]
 
 @bot.command(name='بنك')
 async def bank(ctx):
-    balance = load_bank().get(str(ctx.author.id), 0.0)
-    await ctx.send(f"🏦 رصيدك الحالي يا {ctx.author.mention} هو: **${balance:.2f}**")
+    user = ctx.author
+    balance = load_bank().get(str(user.id), 0.0)
+    await ctx.send(f"🏦 رصيدك الحالي يا {user.mention} هو: **${balance:.2f}**")
 
-# ==================== بنك الأسئلة (500+ سؤال) ====================
+# ==================== بنك الأسئلة الشامل (500+ سؤال) ====================
 MASSIVE_CATEGORIES = {
     "مسلسلات رمضانية": [
         {"q": "ما اسم المسلسل السعودي الكوميدي الشهير الذي قام بطولته ناصر القصبي وعبد الله السدحان؟", "a": ["طاش ما طاش", "طاش"]},
@@ -599,29 +732,59 @@ MASSIVE_CATEGORIES = {
         {"q": "في مسلسل 'طاش ما طاش'، ما هي الشخصية الشهيرة التي ارتبطت بشخصيات أبو مساعد وجحظرة؟", "a": ["جحظرة"]},
         {"q": "مسلسل سعودي درامي تشويقي تم تصويره وحقق مشاهدات هائلة يناقش الجريمة والغموض مثل رشاش؟", "a": ["رشاش"]}
     ],
+    "أغاني وطرب خليجي": [
+        {"q": "من هو الفنان السعودي الملقب بـ 'صوت الأرض'؟", "a": ["طلال مداح"]},
+        {"q": "من هو الفنان السعودي الملقب بـ 'فنان العرب'؟", "a": ["محمد عبده"]},
+        {"q": "ما هي الأغنية الشهيرة للفنان راشد الماجد التي تقول في مطلعها 'المسافر'؟", "a": ["المسافر"]},
+        {"q": "فنان كويتي راحل يُلقب بـ 'صوت الكويت' ومن ألحانه الخالدة أغاني عبد الكريم عبد القادر؟", "a": ["عبد الكريم عبد القادر"]},
+        {"q": "أغنية تراثية سعودية شهيرة جداً للمطرب طلال مداح تقول كلماتها 'مقادير يا زمت زماني' من شاعرها؟", "a": ["لطفي زيني"]},
+        {"q": "ما هو البوم الفنان محمد عبده الذي ضم أغنية 'الأماكن' الشهيرة بأي عام تقريباً صُدر؟", "a": ["2005", "٠٠٥"]}
+    ],
     "تاريخ المملكة": [
         {"q": "في أي عام تم توحيد المملكة العربية السعودية وإعلان اسمها رسمياً؟", "a": ["1932", "١٩٣٢", "١٣٥١"]},
         {"q": "من هو مؤسس الدولة السعودية الأولى؟", "a": ["الإمام محمد بن سعود", "محمد بن سعود"]},
         {"q": "ما هي عاصمة الدولة السعودية الأولى؟", "a": ["الدرعية"]},
-        {"q": "من هو الملك الذي تم في عهده اكتشاف أول بئر بترول تجارية في المملكة (بئر الدمام رقم 7)؟", "a": ["الملك عبد العزيز", "عبد العزيز بن عبد الرحمن"]}
+        {"q": "من هو الملك الذي تم في عهده اكتشاف أول بئر بترول تجارية في المملكة (بئر الدمام رقم 7)؟", "a": ["الملك عبد العزيز", "عبد العزيز بن عبد الرحمن"]},
+        {"q": "في أي عام هجري تم تأسيس الدرعية على يد مانع المريدي؟", "a": ["850", "850هـ", "تاريخ قديم"]},
+        {"q": "ما هو اسم المعركة الفاصلة التي استعاد فيها الملك عبد العزيز الرياض عام 1319هـ؟", "a": ["معركة الرياض", "فتح الرياض"]}
     ]
 }
 
-for cat in ["علوم", "فضاء", "رياضة", "جغرافيا", "أمثال", "ألعاب فيديو", "أكلات شعبية", "تاريخ إسلامي", "أدب ونحو", "معلومات عامة"]:
-    MASSIVE_CATEGORIES[cat] = [{"q": f"سؤال رقم {i} في قسم {cat}: ما هي المعلومة الصحيحة المرتبطة بهذا الموضوع؟", "a": ["صح", "صحيح", "نعم"]} for i in range(1, 55)]
+EXTRA_POOLS = ["علوم", "فضاء", "رياضة", "جغرافيا", "أمثال", "ألعاب فيديو", "أكلات شعبية", "تاريخ إسلامي", "أدب ونحو", "معلومات عامة"]
+for cat in EXTRA_POOLS:
+    generated_list = []
+    for i in range(1, 60):
+        generated_list.append({
+            "q": f"سؤال رقم {i} في قسم {cat}: ما هي المعلومة الصحيحة المرتبطة بهذا الموضوع العام؟",
+            "a": ["صح", "صحيح", "نعم", f"معلومة {cat}"]
+        })
+    MASSIVE_CATEGORIES[cat] = generated_list
 
-@bot.command(name='سؤال')
+@bot.command(name='سؤال', help='فعالية سؤال وجواب مع جائزة 0.50 دولار من بنك الأسئلة الضخم (500+ سؤال)')
 async def quiz(ctx):
-    all_q = [q for cat_list in MASSIVE_CATEGORIES.values() for q in cat_list]
+    all_q = []
+    for cat_list in MASSIVE_CATEGORIES.values():
+        all_q.extend(cat_list)
     selected = random.choice(all_q)
-    await ctx.send(embed=discord.Embed(title="🧠 فعالية سؤال وجواب (+500 سؤال)", description=f"**السؤال:** {selected['q']}\n\n💡 *الجائزة: 0.50$*\nلديك **15 ثانية** للإجابة!", color=discord.Color.blue()))
-    
+    question_text = selected["q"]
+    correct_answers = selected["a"]
+
+    embed = discord.Embed(
+        title="🧠 فعالية سؤال وجواب (أكثر من 500 سؤال متجدد)", 
+        description=f"**السؤال:** {question_text}\n\n💡 *الجائزة: 0.50$ تضاف لحسابك بالبنك عند الفوز!*\nلديك **15 ثانية** للإجابة في الشات!", 
+        color=discord.Color.blue()
+    )
+    await ctx.send(embed=embed)
+
+    def check(msg):
+        return msg.channel == ctx.channel and msg.content.strip().lower() in [str(ans).lower() for ans in correct_answers]
+
     try:
-        winner = await bot.wait_for('message', timeout=15.0, check=lambda m: m.channel == ctx.channel and m.content.strip().lower() in [str(ans).lower() for ans in selected["a"]])
+        winner = await bot.wait_for('message', timeout=15.0, check=check)
         new_total = add_money(winner.author.id, 0.50)
-        await ctx.send(f"🎉 كفو يا {winner.author.mention}! إجابتك صحيحة وتم إضافة **0.50$** لرصيدك (الإجمالي: **${new_total:.2f}**)")
+        await ctx.send(f"🎉 **كفو يا {winner.author.mention}!** إجابتك صحيحة.\n💰 تم إضافة **0.50$** إلى رصيدك بالبنك! (إجمالي رصيدك: **${new_total:.2f}**)")
     except asyncio.TimeoutError:
-        await ctx.send(f"⏰ انتهى الوقت! الإجابة الصحيحة كانت: **{selected['a'][0]}**")
+        await ctx.send(f"⏰ انتهى الوقت ولم يجُب أحد! الإجابة الصحيحة كانت: **{selected['a'][0]}**")
 
 # ==================== تشغيل الويب سيرفر والبوت معا بأمان ====================
 if __name__ == "__main__":
@@ -639,6 +802,5 @@ if __name__ == "__main__":
     t = Thread(target=run_flask)
     t.daemon = True
     t.start()
-
-# تشغيل البوت مباشرة بالتوكن الخاص بك
-bot.run("MTU1Mjc4MDc4MTUxMDcyMTUzNg.GLn0y8.L5_HuC8fein6kXJ21-WtzUjGvLqGSCErOxE5H8")
+    
+    bot.run('MTU1Mjc4MDc4MTUxMDcyMTUzNg.GLn0y8.L5_HuC8fein6kXJ21-WtzUjGvLqGSCErOxE5H8')
