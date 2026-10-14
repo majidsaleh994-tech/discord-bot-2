@@ -633,5 +633,6 @@ if __name__ == "__main__":
     def home(): return "I'm alive!", 200
         
     Thread(target=lambda: app.run(host='0.0.0.0', port=8080), daemon=True).start()
-   import os
-bot.run(os.getenv('MTU1MzAxMTY1MTkyODkyMDEzNA.Guwq2B.Pmh-nDh07766_k5uPCSKNPHRYcDz_LMapY0YeY'))
+    
+import os
+bot.run(os.getenv('DISCORD_TOKEN'))
