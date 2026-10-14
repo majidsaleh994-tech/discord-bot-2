@@ -635,4 +635,4 @@ if __name__ == "__main__":
     Thread(target=lambda: app.run(host='0.0.0.0', port=8080), daemon=True).start()
 
 # تشغيل البوت مباشرة بالتوكن الخاص بك
-bot.run("MTU1MzAxMTY1MTkyODkyMDEzNA.Gso8FX.CImyg-UKzg7meEfpZw81CGewalkHssnEt7jhHk")
+bot.run("MTU1MzAxMTY1MTkyODkyMDEzNA.GOFh02.2BQ6c9uGsRQ4fMGagZeiNiyFCXw-Cq-O_3Og_k")
