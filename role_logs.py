@@ -6,7 +6,7 @@ class RoleLogs(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         # آيدي روم سجلات الرولات المخصص
-        self.LOG_CHANNEL_ID = 1553485936073908244
+        self.LOG_CHANNEL_ID = 1559738963042770984
         
         # روابط الصور الجديدة للإعطاء والإزالة
         self.ROLE_ADD_ICON_URL = "https://media.discordapp.net/attachments/1390933149348790413/1392500394051108945/e1e2c025-74d2-4780-92ba-c2d716f742e4_1.png"
