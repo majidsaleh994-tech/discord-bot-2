@@ -634,5 +634,5 @@ if __name__ == "__main__":
         
     Thread(target=lambda: app.run(host='0.0.0.0', port=8080), daemon=True).start()
 
-# تشغيل البوت باستخدام متغير البيئة بأمان تام
-bot.run(os.getenv('MTU1MzAxMTY1MTkyODkyMDEzNA.Gso8FX.CImyg-UKzg7meEfpZw81CGewalkHssnEt7jhHk'))
+# تشغيل البوت مباشرة بالتوكن الخاص بك
+bot.run("MTU1MzAxMTY1MTkyODkyMDEzNA.Gso8FX.CImyg-UKzg7meEfpZw81CGewalkHssnEt7jhHk")
