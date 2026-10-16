@@ -802,5 +802,18 @@ if __name__ == "__main__":
     t = Thread(target=run_flask)
     t.daemon = True
     t.start()
+
+    import os
+
+token = os.getenv("DISCORD_TOKEN")
+
+print("--- DEBUG TOKEN CHECK ---")
+if token is None:
+    print("TOKEN STATUS: Not found! (None)")
+else:
+    print(f"TOKEN STATUS: Found! Length = {len(token)}")
+    print(f"TOKEN STARTS WITH: '{token[:5]}...'")
+    print(f"TOKEN ENDS WITH: '...{token[-5:]}'")
+print("-------------------------")
     
     bot.run('MTU1MzAxMTY1MTkyODkyMDEzNA.GwpAXl.Hpff3MEG4BIcpqz_db4I9IoCWnQu99DSfIxl-Q')
