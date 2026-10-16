@@ -355,7 +355,7 @@ async def duty_records(interaction: discord.Interaction, من_تاريخ: str, �
     await interaction.response.send_message(report_text, ephemeral=False)
 
 # ==================== أمر تعديل ساعات الدوام (زيادة / نقص) ====================
-DUTY_ADMIN_ROLE_ID = 
+DUTY_ADMIN_ROLE_ID = 1518637591828758528
 
 @bot.tree.command(name="تعديل_الدوام", description="زيادة أو إنقاص ساعات الدوام لمشرف معين")
 @app_commands.describe(
