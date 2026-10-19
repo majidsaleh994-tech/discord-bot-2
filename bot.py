@@ -1337,6 +1337,6 @@ if __name__ == "__main__":
     t.start()
     
     # ⚠️ استبدل النص التالي بالتوكن الحقيقي الخاص بك بين العلامتين التنصيص
-    bot_token = "MTU1MzAxMTY1MTkyODkyMDEzNA.GQj9eF.6jRFlyaLwU_jS4m43Ix9KW5-QIkx-ERpPUj6zY"
+    bot_token = "MTU1MzAxMTY1MTkyODkyMDEzNA.GdGNaD.HvZp9FZ7t7d3mQM6dWN_9KfbKE7CKBZLpjRd70"
     
     bot.run(bot_token)
