@@ -1338,4 +1338,5 @@ if __name__ == "__main__":
     
     # ⚠️ استبدل النص التالي بالتوكن الحقيقي الخاص بك بين العلامتين التنصيص
     bot_token = "MTU1MzAxMTY1MTkyODkyMDEzNA.GQj9eF.6jRFlyaLwU_jS4m43Ix9KW5-QIkx-ERpPUj6zY"
+    
     bot.run(bot_token)
